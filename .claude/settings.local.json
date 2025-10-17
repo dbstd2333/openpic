@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(npx nest generate service:*)",
+      "Bash(npx nest generate:*)",
+      "Bash(pnpm run start:dev:*)",
+      "Bash(node:*)",
+      "Bash(pnpm run openapi:*)",
+      "Bash(curl:*)",
+      "Bash(npx prettier:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

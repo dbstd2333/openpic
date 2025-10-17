@@ -1,0 +1,541 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "User login",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        },
+        "summary": "User logout",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/albums": {
+      "get": {
+        "operationId": "AlbumsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Albums retrieved successfully"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get all albums",
+        "tags": [
+          "Albums"
+        ]
+      },
+      "post": {
+        "operationId": "AlbumsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlbumDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Album created successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "500": {
+            "description": "Failed to create album"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new album",
+        "tags": [
+          "Albums"
+        ]
+      }
+    },
+    "/albums/{id}": {
+      "get": {
+        "operationId": "AlbumsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Album ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Album retrieved successfully"
+          },
+          "404": {
+            "description": "Album not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get album by ID",
+        "tags": [
+          "Albums"
+        ]
+      },
+      "delete": {
+        "operationId": "AlbumsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Album ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Album deleted successfully"
+          },
+          "500": {
+            "description": "Failed to delete album"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an album",
+        "tags": [
+          "Albums"
+        ]
+      }
+    },
+    "/photos/album/{albumId}": {
+      "get": {
+        "operationId": "PhotosController_findByAlbum",
+        "parameters": [
+          {
+            "name": "albumId",
+            "required": true,
+            "in": "path",
+            "description": "Album ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photos retrieved successfully"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get photos by album ID",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/photo/{id}": {
+      "get": {
+        "operationId": "PhotosController_getPhotoFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photo file retrieved successfully"
+          },
+          "404": {
+            "description": "Photo not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get photo file by ID",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/file/{path}": {
+      "get": {
+        "operationId": "PhotosController_getFileByPath",
+        "parameters": [
+          {
+            "name": "0",
+            "required": true,
+            "in": "path",
+            "description": "File path (relative to uploads)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photo file retrieved successfully"
+          },
+          "404": {
+            "description": "File not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get photo file by direct path",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/info/{id}": {
+      "get": {
+        "operationId": "PhotosController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photo metadata retrieved successfully"
+          },
+          "404": {
+            "description": "Photo not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Get photo metadata by ID",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/upload": {
+      "post": {
+        "operationId": "PhotosController_uploadFiles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Files uploaded successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid file format or size"
+          },
+          "500": {
+            "description": "Upload failed"
+          }
+        },
+        "summary": "Upload photos with streaming",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/delete": {
+      "post": {
+        "operationId": "PhotosController_deletePhotos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePhotosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photos deleted successfully"
+          },
+          "400": {
+            "description": "Bad request - no photo IDs provided"
+          },
+          "500": {
+            "description": "Delete failed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete photos",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/move": {
+      "post": {
+        "operationId": "PhotosController_movePhotos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovePhotosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photos moved successfully"
+          },
+          "400": {
+            "description": "Bad request - no photo IDs provided"
+          },
+          "500": {
+            "description": "Move operation failed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move photos to another album",
+        "tags": [
+          "Photos"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Picbed API",
+    "description": "API for photo management and album organization",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username for authentication",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password for authentication",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "User ID",
+            "example": 1
+          },
+          "username": {
+            "type": "string",
+            "description": "Username",
+            "example": "admin"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success status",
+            "example": true
+          },
+          "data": {
+            "description": "User data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "CreateAlbumDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Album name",
+            "example": "Summer Vacation 2024"
+          },
+          "description": {
+            "type": "string",
+            "description": "Album description",
+            "example": "Photos from our summer vacation"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "DeletePhotosDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "description": "Array of photo IDs to delete",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "MovePhotosDto": {
+        "type": "object",
+        "properties": {
+          "photoIds": {
+            "description": "Array of photo IDs to move",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "albumId": {
+            "type": "number",
+            "description": "Target album ID",
+            "example": 2
+          }
+        },
+        "required": [
+          "photoIds",
+          "albumId"
+        ]
+      }
+    }
+  }
+}
