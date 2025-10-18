@@ -281,16 +281,9 @@ export class PhotosController {
         });
       }
 
-      console.log(`🎬 开始处理multipart流`);
-      console.log(`📝 是否是multipart: ${request.isMultipart()}`);
 
       for await (const part of parts) {
         if (hasError) break;
-
-        console.log(
-          `🔍 检查multipart部分: fieldname=${part.fieldname}, filename=${part.filename}, mimetype=${part.mimetype}`,
-        );
-
         // Check if this is a field (like albumId) or a file
         // Files have a filename property, fields don't
         if (part.filename) {
@@ -312,10 +305,6 @@ export class PhotosController {
           }
 
           const finalFilePath = path.join(uploadDir, filename);
-
-          console.log(`📁 处理文件: ${file.filename} -> ${filename}`);
-          console.log(`📁 文件扩展名: ${fileExtension}`);
-          console.log(`📁 MIME类型: ${file.mimetype}`);
 
           // Validate file type
           if (!allowedMimes.includes(file.mimetype)) {
@@ -354,10 +343,7 @@ export class PhotosController {
               albumId: albumId || undefined,
             };
 
-            console.log(
-              `💾 准备写入数据库: albumId=${albumId}, photoData=`,
-              photoData,
-            );
+
             // 传入文件路径以生成缩略图
             const savedPhoto = await this.photosService.create(photoData, finalFilePath);
             uploadedFiles.push(savedPhoto);

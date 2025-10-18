@@ -45,10 +45,12 @@ export class ImageProcessingService {
 	 * 批量为指定目录下的所有jpg图片生成缩略图
 	 * @param directory 目录路径
 	 * @param thumbnailDir 缩略图目录路径，默认为原目录下的thumbnails子目录
+	 * @param suffix 缩略图文件名后缀，默认为空
 	 */
 	async batchGenerateThumbnails(
 		directory: string,
 		thumbnailDir?: string,
+		suffix?: string,
 	): Promise<{ success: number; failed: number; errors: string[] }> {
 		const result = {
 			success: 0,
@@ -88,9 +90,9 @@ export class ImageProcessingService {
 				try {
 					const inputPath = path.join(directory, file);
 
-					// 生成缩略图文件名（保持原文件名，但扩展名改为webp）
+					// 生成缩略图文件名（保持原文件名，添加后缀，扩展名改为webp）
 					const baseName = path.basename(file, path.extname(file));
-					const thumbnailFileName = `${baseName}.webp`;
+					const thumbnailFileName = `${baseName}${suffix || ''}.webp`;
 					const outputPath = path.join(targetThumbnailDir, thumbnailFileName);
 
 					// 检查缩略图是否已存在

@@ -19,7 +19,7 @@ export class PhotosService {
   async findByAlbum(albumId: number, page = 1, pageSize = 20): Promise<Photo[]> {
     // 计算偏移量
     const skip = (page - 1) * pageSize;
-    
+
     return this.photosRepository.find({
       where: { albumId },
       order: { createdAt: 'DESC' },
@@ -37,7 +37,7 @@ export class PhotosService {
    */
   async create(photoData: Partial<Photo>, filePath?: string): Promise<Photo> {
     const photo = this.photosRepository.create(photoData);
-    
+
     // 如果提供了文件路径，生成缩略图并获取图片信息
     if (filePath && fs.existsSync(filePath)) {
       try {
@@ -45,17 +45,16 @@ export class PhotosService {
         const metadata = await this.imageProcessingService.getImageInfo(filePath);
         photo.width = metadata.width;
         photo.height = metadata.height;
-        
+
         // 获取文件名（不带扩展名）
-        const uploadDir = path.dirname(filePath);
         const originalFilename = path.basename(filePath);
         const filenameWithoutExt = path.basename(filePath, path.extname(filePath));
-        
-        // 生成缩略图文件名：使用相同文件名前缀，但扩展名固定为.webp
-        const thumbnailFilename = `${filenameWithoutExt}.webp`;
-        // 缩略图与原图在同一目录，而不是在thumbnails子目录中
-        const thumbnailPath = path.join(uploadDir, thumbnailFilename);
-        
+
+        // 生成缩略图文件名：使用_thumb后缀，扩展名固定为.webp
+        const thumbnailFilename = `${filenameWithoutExt}_thumb.webp`;
+        // 缩略图与原图保持在同一目录（扁平化结构）
+        const thumbnailPath = path.join(path.dirname(filePath), thumbnailFilename);
+
         // 检查缩略图是否已存在，如果存在则跳过生成
         if (fs.existsSync(thumbnailPath)) {
           console.log(`缩略图已存在，跳过生成: ${thumbnailFilename}`);
@@ -69,20 +68,21 @@ export class PhotosService {
           );
           console.log(`缩略图生成成功: ${thumbnailPath}`);
         }
-        
+
         // 获取缩略图大小
         const thumbnailStats = fs.statSync(thumbnailPath);
+        // 缩略图路径使用相对路径，与原图在同一目录
         photo.thumbnailPath = `uploads/${thumbnailFilename}`;
         photo.thumbnailFilename = thumbnailFilename;
         photo.thumbnailSize = thumbnailStats.size;
-        
+
         console.log(`原图文件名: ${originalFilename}, 缩略图文件名: ${thumbnailFilename}`);
       } catch (error) {
         console.error('生成缩略图失败:', error);
         // 不阻止上传过程，只是记录错误
       }
     }
-    
+
     const savedPhoto = await this.photosRepository.save(photo);
 
     if (savedPhoto.albumId) {
@@ -100,7 +100,7 @@ export class PhotosService {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      
+
       // 删除缩略图文件
       if (photo.thumbnailPath) {
         const thumbnailFilePath = path.join(process.cwd(), 'public', photo.thumbnailPath);
@@ -180,14 +180,13 @@ export class PhotosService {
         const metadata = await this.imageProcessingService.getImageInfo(filePath);
         photo.width = metadata.width;
         photo.height = metadata.height;
-        
+
         // 生成缩略图
-        const uploadDir = path.dirname(filePath);
         const filename = path.basename(filePath, path.extname(filePath));
-        const thumbnailFilename = `${filename}.webp`;
-        // 缩略图与原图在同一目录，而不是在thumbnails子目录中
-        const thumbnailPath = path.join(uploadDir, thumbnailFilename);
-        
+        const thumbnailFilename = `${filename}_thumb.webp`;
+        // 缩略图与原图保持在同一目录（扁平化结构）
+        const thumbnailPath = path.join(path.dirname(filePath), thumbnailFilename);
+
         // 检查缩略图是否已存在，如果存在则跳过生成
         if (fs.existsSync(thumbnailPath)) {
           console.log(`缩略图已存在，跳过生成: ${thumbnailFilename}`);
@@ -199,23 +198,24 @@ export class PhotosService {
           result.success++;
           continue;
         }
-        
+
         await this.imageProcessingService.generateThumbnail(
           filePath,
           thumbnailPath,
           400, // 缩略图宽度
           80   // 压缩质量
         );
-        
+
         // 获取缩略图大小
         const thumbnailStats = fs.statSync(thumbnailPath);
+        // 缩略图路径使用相对路径，与原图在同一目录
         photo.thumbnailPath = `uploads/${thumbnailFilename}`;
         photo.thumbnailFilename = thumbnailFilename;
         photo.thumbnailSize = thumbnailStats.size;
-        
+
         // 保存更新后的照片信息
         await this.photosRepository.save(photo);
-        
+
         result.success++;
         console.log(`缩略图生成成功: ${thumbnailPath}`);
       } catch (error) {
@@ -233,24 +233,19 @@ export class PhotosService {
    */
   async batchGenerateThumbnails(): Promise<{ success: number; failed: number; errors: string[] }> {
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    const thumbnailDir = path.join(uploadDir, 'thumbnails');
-    
-    // 确保缩略图目录存在
-    if (!fs.existsSync(thumbnailDir)) {
-      fs.mkdirSync(thumbnailDir, { recursive: true });
-    }
-    
-    // 使用ImageProcessingService批量生成缩略图
+
+    // 使用ImageProcessingService批量生成缩略图，保持扁平化结构
     const result = await this.imageProcessingService.batchGenerateThumbnails(
       uploadDir,
-      thumbnailDir
+      uploadDir, // 输出到同一目录，保持扁平化结构
+      '_thumb'   // 使用_thumb后缀
     );
-    
+
     // 更新数据库中的缩略图信息
     if (result.success > 0) {
       await this.updateThumbnailInfoInDatabase();
     }
-    
+
     return result;
   }
 
@@ -261,23 +256,23 @@ export class PhotosService {
     const photos = await this.photosRepository.find({
       where: { thumbnailPath: undefined } // 只更新没有缩略图路径的照片
     });
-    
+
     for (const photo of photos) {
       try {
         const filePath = path.join(process.cwd(), 'public', photo.path);
         if (fs.existsSync(filePath)) {
           const filename = path.basename(filePath, path.extname(filePath));
-          const thumbnailFilename = `${filename}.webp`;
-          const thumbnailPath = path.join('uploads', 'thumbnails', thumbnailFilename);
+          const thumbnailFilename = `${filename}_thumb.webp`;
+          const thumbnailPath = path.join('uploads', thumbnailFilename);
           const thumbnailFilePath = path.join(process.cwd(), 'public', thumbnailPath);
-          
+
           // 如果缩略图文件存在，更新数据库记录
           if (fs.existsSync(thumbnailFilePath)) {
             const thumbnailStats = fs.statSync(thumbnailFilePath);
             photo.thumbnailPath = thumbnailPath;
             photo.thumbnailFilename = thumbnailFilename;
             photo.thumbnailSize = thumbnailStats.size;
-            
+
             await this.photosRepository.save(photo);
             console.log(`更新照片 ${photo.id} 的缩略图信息: ${thumbnailPath}`);
           }
