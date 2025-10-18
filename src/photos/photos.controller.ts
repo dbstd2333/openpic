@@ -53,7 +53,7 @@ export class PhotosController {
       // 获取分页参数，默认值为 page=1, pageSize=20
       const page = parseInt(req.query.page) || 1;
       const pageSize = parseInt(req.query.pageSize) || 20;
-      
+
       const photos = await this.photosService.findByAlbum(+albumId, page, pageSize);
 
       // Increment view count when album photos are accessed
@@ -154,7 +154,7 @@ export class PhotosController {
       // 设置适当的响应头
       const ext = path.extname(filename).toLowerCase();
       let mimeType = 'image/jpeg'; // 默认类型
-      
+
       // 根据文件扩展名设置MIME类型
       switch (ext) {
         case '.jpg':
@@ -174,7 +174,7 @@ export class PhotosController {
           mimeType = 'image/svg+xml';
           break;
       }
-      
+
       reply.header('Content-Type', mimeType);
       reply.header('Cache-Control', 'public, max-age=31536000'); // 缓存1年
       reply.header('Content-Disposition', `inline; filename="${filename}"`);
@@ -299,18 +299,18 @@ export class PhotosController {
 
           // Get file extension safely
           const fileExtension = path.extname(file.filename).toLowerCase();
-          
+
           // 使用原始文件名而不是随机生成的文件名
           // 如果文件已存在，添加时间戳前缀避免冲突
           let filename = file.filename;
           const filePath = path.join(uploadDir, filename);
-          
+
           // 检查文件是否已存在，如果存在则添加时间戳前缀
           if (fs.existsSync(filePath)) {
             const nameWithoutExt = path.basename(file.filename, fileExtension);
             filename = `${nameWithoutExt}-${Date.now()}${fileExtension}`;
           }
-          
+
           const finalFilePath = path.join(uploadDir, filename);
 
           console.log(`📁 处理文件: ${file.filename} -> ${filename}`);
@@ -531,7 +531,7 @@ export class PhotosController {
       }
 
       const results = await this.photosService.generateThumbnails(body.photoIds);
-      
+
       return reply.status(HttpStatus.OK).send({
         success: true,
         data: {
@@ -558,7 +558,7 @@ export class PhotosController {
   ) {
     try {
       const results = await this.photosService.batchGenerateThumbnails();
-      
+
       return reply.status(HttpStatus.OK).send({
         success: true,
         data: {

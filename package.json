@@ -21,7 +21,7 @@
     "openapi": "ts-node generate-openapi.ts",
     "debug:photos": "ts-node src/debug-photo-files.ts",
     "migration:update-thumbnails": "ts-node src/update-thumbnail-paths.ts",
-    "gentmp": "ts-node src/generate-thumbnails.ts"
+    "gentmp": "bun src/generate-thumbnails.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
