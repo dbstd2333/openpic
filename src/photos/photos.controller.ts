@@ -330,26 +330,33 @@ export class PhotosController {
             const size = buffer.length;
             console.log(`✅ 文件已保存: ${finalFilePath} (${size} bytes)`);
 
-            // Save file info to database with thumbnail generation
-            const relativePath = path
-              .join('uploads', filename)
-              .replace(/\\/g, '/');
-            const photoData: Partial<Photo> = {
-              filename: file.filename,
-              originalName: file.filename,
-              path: relativePath,
-              size,
-              mimeType: file.mimetype,
-              albumId: albumId || undefined,
-            };
+            // 检查文件扩展名，如果是webp则不写入数据库
+            const isWebpFile = fileExtension === '.webp';
+            
+            if (!isWebpFile) {
+              // Save file info to database with thumbnail generation
+              const relativePath = path
+                .join('uploads', filename)
+                .replace(/\\/g, '/');
+              const photoData: Partial<Photo> = {
+                filename: file.filename,
+                originalName: file.filename,
+                path: relativePath,
+                size,
+                mimeType: file.mimetype,
+                albumId: albumId || undefined,
+              };
 
-
-            // 传入文件路径以生成缩略图
-            const savedPhoto = await this.photosService.create(photoData, finalFilePath);
-            uploadedFiles.push(savedPhoto);
-            console.log(
-              `✅ 数据库写入成功: id=${savedPhoto.id}, albumId=${savedPhoto.albumId}`,
-            );
+              // 传入文件路径以生成缩略图
+              const savedPhoto = await this.photosService.create(photoData, finalFilePath);
+              uploadedFiles.push(savedPhoto);
+              console.log(
+                `✅ 数据库写入成功: id=${savedPhoto.id}, albumId=${savedPhoto.albumId}`,
+              );
+            } else {
+              // webp文件只保存到磁盘，不写入数据库
+              console.log(`✅ WebP文件已保存到磁盘，跳过数据库写入: ${filename}`);
+            }
           } catch (fileError) {
             hasError = true;
             errorMessage = `Failed to process file ${file.filename}: ${fileError.message}`;
@@ -407,6 +414,7 @@ export class PhotosController {
         data: {
           files: uploadedFiles,
           message: `${uploadedFiles.length} file(s) uploaded successfully`,
+          note: 'WebP files are saved to disk but not stored in database',
         },
       });
     } catch (error) {
