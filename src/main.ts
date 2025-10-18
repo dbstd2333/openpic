@@ -43,7 +43,7 @@ async function bootstrap() {
 
 	// Static file serving for photos
 	await app.register(require("@fastify/static"), {
-		root: join(__dirname, "..", "public", "uploads"),
+		root: join(__dirname, "..", "..", "public", "uploads"),
 		prefix: "/photos/file/",
 		decorateReply: false,
 	});
