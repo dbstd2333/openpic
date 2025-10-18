@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -31,10 +30,6 @@ import { BootstrapService } from './bootstrap.service';
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public', 'uploads'),
-      serveRoot: '/api/photos/file/',
     }),
     AuthModule,
     AlbumsModule,

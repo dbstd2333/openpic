@@ -62,7 +62,9 @@ export class PhotosService {
   }
 
   async updatePhotoAlbum(photoId: number, albumId: number): Promise<void> {
-    const photo = await this.photosRepository.findOne({ where: { id: photoId } });
+    const photo = await this.photosRepository.findOne({
+      where: { id: photoId },
+    });
     if (photo) {
       const oldAlbumId = photo.albumId;
       photo.albumId = albumId;

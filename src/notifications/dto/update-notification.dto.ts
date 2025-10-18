@@ -1,4 +1,11 @@
-import { IsOptional, IsBoolean, IsString, IsIn, IsNumber, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsBoolean,
+  IsString,
+  IsIn,
+  IsNumber,
+  IsDateString,
+} from 'class-validator';
 
 /**
  * 更新通知DTO

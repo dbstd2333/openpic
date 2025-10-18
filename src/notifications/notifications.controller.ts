@@ -10,7 +10,12 @@ import {
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -37,7 +42,9 @@ export class NotificationsController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiResponse({ status: 403, description: '禁止访问' })
   async create(@Body() createNotificationDto: CreateNotificationDto) {
-    const notification = await this.notificationsService.create(createNotificationDto);
+    const notification = await this.notificationsService.create(
+      createNotificationDto,
+    );
     return ApiResponseWrapper.success(notification, '通知创建成功');
   }
 
@@ -89,8 +96,14 @@ export class NotificationsController {
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiResponse({ status: 403, description: '禁止访问' })
   @ApiResponse({ status: 404, description: '通知不存在' })
-  async update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    const notification = await this.notificationsService.update(+id, updateNotificationDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+  ) {
+    const notification = await this.notificationsService.update(
+      +id,
+      updateNotificationDto,
+    );
     if (!notification) {
       return ApiResponseWrapper.error('通知不存在');
     }

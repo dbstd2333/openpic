@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import * as fs from "fs";
+import { join } from "path";
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestFastifyApplication>(
@@ -38,6 +39,13 @@ async function bootstrap() {
 			fieldSize: 1024 * 1024, // 1MB for form fields
 		},
 		attachFieldsToBody: false,
+	});
+
+	// Static file serving for photos
+	await app.register(require("@fastify/static"), {
+		root: join(__dirname, "..", "public", "uploads"),
+		prefix: "/photos/file/",
+		decorateReply: false,
 	});
 
 	// Swagger configuration

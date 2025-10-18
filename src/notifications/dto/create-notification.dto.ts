@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, IsNumber, IsDateString, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsIn,
+  IsNumber,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
 
 /**
  * 创建通知DTO

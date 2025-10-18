@@ -19,14 +19,18 @@ export class NotificationsService {
   /**
    * 创建新通知
    */
-  async create(createNotificationDto: CreateNotificationDto): Promise<Notification> {
-    const notification = this.notificationsRepository.create(createNotificationDto);
-    
+  async create(
+    createNotificationDto: CreateNotificationDto,
+  ): Promise<Notification> {
+    const notification = this.notificationsRepository.create(
+      createNotificationDto,
+    );
+
     // 处理过期时间
     if (createNotificationDto.expiresAt) {
       notification.expiresAt = new Date(createNotificationDto.expiresAt);
     }
-    
+
     return this.notificationsRepository.save(notification);
   }
 
@@ -47,7 +51,10 @@ export class NotificationsService {
     return this.notificationsRepository
       .createQueryBuilder('notification')
       .where('notification.isActive = :isActive', { isActive: true })
-      .andWhere('(notification.expiresAt IS NULL OR notification.expiresAt > :now)', { now })
+      .andWhere(
+        '(notification.expiresAt IS NULL OR notification.expiresAt > :now)',
+        { now },
+      )
       .orderBy('notification.priority', 'DESC')
       .addOrderBy('notification.createdAt', 'DESC')
       .getMany();
