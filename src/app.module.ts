@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AlbumsModule } from './albums/albums.module';
 import { PhotosModule } from './photos/photos.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { BootstrapService } from './bootstrap.service';
 
 @Module({
@@ -29,9 +32,14 @@ import { BootstrapService } from './bootstrap.service';
       }),
       inject: [ConfigService],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public', 'uploads'),
+      serveRoot: '/api/photos/file/',
+    }),
     AuthModule,
     AlbumsModule,
     PhotosModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, BootstrapService],

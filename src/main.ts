@@ -6,7 +6,6 @@ import {
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
-import { join } from "path";
 import * as fs from "fs";
 
 async function bootstrap() {
@@ -28,17 +27,6 @@ async function bootstrap() {
 			transform: true,
 		}),
 	);
-
-	// Register static files
-	const publicPath = join(__dirname, "..", "public");
-	if (!fs.existsSync(publicPath)) {
-		fs.mkdirSync(publicPath, { recursive: true });
-	}
-
-	await app.register(require("@fastify/static"), {
-		root: publicPath,
-		prefix: "/public/",
-	});
 
 	// Cookie parser middleware
 	await app.register(require("@fastify/cookie"));

@@ -22,7 +22,6 @@ import { PhotosService } from './photos.service';
 import { AlbumsService } from '../albums/albums.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Response } from 'express';
-import { extname } from 'path';
 import * as fs from 'fs';
 import * as path from 'path';
 import { FastifyReply } from 'fastify';
@@ -117,102 +116,6 @@ export class PhotosController {
       return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
         success: false,
         error: 'Failed to fetch photo file',
-      });
-    }
-  }
-
-  @Get('file/*')
-  @ApiOperation({ summary: 'Get photo file by direct path' })
-  @ApiParam({ name: '0', description: 'File path (relative to uploads)' })
-  @ApiResponse({ status: 200, description: 'Photo file retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'File not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async getFileByPath(
-    @Req() request: any,
-    @Res({ passthrough: true }) reply: FastifyReply,
-  ) {
-    let filePath = '';
-    try {
-      // Get the file path from the request URL
-      const url = request.url;
-      console.log(`🔍 [File Access] Request URL: ${url}`);
-
-      // Extract the file path after /photos/file/
-      filePath = url.replace('/photos/file/', '');
-      console.log(`🔍 [File Access] Extracted file path: ${filePath}`);
-
-      if (!filePath) {
-        console.log(`❌ [File Access] No file path provided in URL`);
-        return reply.status(HttpStatus.BAD_REQUEST).send({
-          success: false,
-          error: 'No file path provided',
-        });
-      }
-
-      const fullPath = path.join(process.cwd(), 'public', 'uploads', filePath);
-      console.log(`🔍 [File Access] Full path constructed: ${fullPath}`);
-
-      const uploadsPath = path.normalize(path.join(process.cwd(), 'public', 'uploads'));
-      console.log(`🔍 [File Access] Uploads directory: ${uploadsPath}`);
-
-      // Security check: ensure the path is within uploads directory
-      const normalizedPath = path.normalize(fullPath);
-      console.log(`🔍 [File Access] Normalized path: ${normalizedPath}`);
-
-      if (!normalizedPath.startsWith(uploadsPath)) {
-        console.log(`❌ [File Access] Security check failed - path traversal attempt`);
-        return reply.status(HttpStatus.FORBIDDEN).send({
-          success: false,
-          error: 'Access denied: path traversal detected',
-        });
-      }
-
-      // Check if file exists
-      const fileExists = fs.existsSync(fullPath);
-      console.log(`🔍 [File Access] File exists: ${fileExists}`);
-
-      if (!fileExists) {
-        console.log(`❌ [File Access] File not found: ${fullPath}`);
-        return reply.status(HttpStatus.NOT_FOUND).send({
-          success: false,
-          error: 'File not found',
-        });
-      }
-
-      console.log(`✅ [File Access] File found, preparing to serve...`);
-
-      // Determine MIME type from file extension
-      const ext = path.extname(filePath).toLowerCase();
-      const mimeTypes: { [key: string]: string } = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-        '.svg': 'image/svg+xml',
-      };
-      const mimeType = mimeTypes[ext] || 'application/octet-stream';
-
-      // Set headers
-      reply.header('Content-Type', mimeType);
-      reply.header('Cache-Control', 'public, max-age=31536000');
-      reply.header('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
-
-      // Return file
-      console.log(`✅ [File Access] Creating file stream and sending response...`);
-      const fileStream = fs.createReadStream(fullPath);
-      return reply.status(HttpStatus.OK).send(fileStream);
-    } catch (error) {
-      console.error(`❌ [File Access] Error serving file:`, error);
-      console.error(`❌ [File Access] Error details:`, {
-        message: error.message,
-        stack: error.stack,
-        filePath: filePath
-      });
-      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-        success: false,
-        error: 'Failed to serve file',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       });
     }
   }
