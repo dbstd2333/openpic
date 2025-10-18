@@ -18,7 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "openapi": "ts-node generate-openapi.ts"
+    "openapi": "ts-node generate-openapi.ts",
+    "debug:photos": "ts-node src/debug-photo-files.ts",
+    "migration:update-thumbnails": "ts-node src/update-thumbnail-paths.ts",
+    "gentmp": "ts-node src/generate-thumbnails.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -46,6 +49,7 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "^0.34.4",
     "typeorm": "^0.3.27"
   },
   "devDependencies": {

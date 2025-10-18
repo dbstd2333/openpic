@@ -21,6 +21,12 @@ export class Photo {
   path: string;
 
   @Column({ nullable: true })
+  thumbnailPath: string; // 缩略图路径
+
+  @Column({ nullable: true })
+  thumbnailFilename: string; // 缩略图文件名
+
+  @Column({ nullable: true })
   albumId: number;
 
   @Column({ type: 'bigint', default: 0 })
@@ -28,6 +34,15 @@ export class Photo {
 
   @Column({ nullable: true })
   mimeType: string;
+
+  @Column({ nullable: true })
+  width: number; // 图片宽度
+
+  @Column({ nullable: true })
+  height: number; // 图片高度
+
+  @Column({ nullable: true })
+  thumbnailSize: number; // 缩略图大小
 
   @CreateDateColumn()
   createdAt: Date;

@@ -29,6 +29,7 @@ import { Photo } from '../entities/photo.entity';
 import { UploadPhotoDto } from './dto/upload-photo.dto';
 import { DeletePhotosDto } from './dto/delete-photos.dto';
 import { MovePhotosDto } from './dto/move-photos.dto';
+import { GenerateThumbnailsDto } from './dto/generate-thumbnails.dto';
 
 @ApiTags('Photos')
 @Controller('photos')
@@ -45,10 +46,15 @@ export class PhotosController {
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async findByAlbum(
     @Param('albumId') albumId: string,
+    @Req() req: any,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     try {
-      const photos = await this.photosService.findByAlbum(+albumId);
+      // 获取分页参数，默认值为 page=1, pageSize=20
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 20;
+      
+      const photos = await this.photosService.findByAlbum(+albumId, page, pageSize);
 
       // Increment view count when album photos are accessed
       if (photos.length > 0) {
@@ -110,6 +116,70 @@ export class PhotosController {
       );
 
       // Return the file
+      const fileStream = fs.createReadStream(filePath);
+      return reply.status(HttpStatus.OK).send(fileStream);
+    } catch (error) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: 'Failed to fetch photo file',
+      });
+    }
+  }
+
+  @Get('file/:filename')
+  @ApiOperation({ summary: 'Get photo file by filename' })
+  @ApiParam({ name: 'filename', description: 'Photo filename' })
+  @ApiResponse({
+    status: 200,
+    description: 'Photo file retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Photo file not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async getPhotoFileByFilename(
+    @Param('filename') filename: string,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    try {
+      // 构建文件路径，直接在uploads目录下查找
+      const filePath = path.join(process.cwd(), 'public', 'uploads', filename);
+
+      // 检查文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return reply.status(HttpStatus.NOT_FOUND).send({
+          success: false,
+          error: 'Photo file not found on disk',
+        });
+      }
+
+      // 设置适当的响应头
+      const ext = path.extname(filename).toLowerCase();
+      let mimeType = 'image/jpeg'; // 默认类型
+      
+      // 根据文件扩展名设置MIME类型
+      switch (ext) {
+        case '.jpg':
+        case '.jpeg':
+          mimeType = 'image/jpeg';
+          break;
+        case '.png':
+          mimeType = 'image/png';
+          break;
+        case '.gif':
+          mimeType = 'image/gif';
+          break;
+        case '.webp':
+          mimeType = 'image/webp';
+          break;
+        case '.svg':
+          mimeType = 'image/svg+xml';
+          break;
+      }
+      
+      reply.header('Content-Type', mimeType);
+      reply.header('Cache-Control', 'public, max-age=31536000'); // 缓存1年
+      reply.header('Content-Disposition', `inline; filename="${filename}"`);
+
+      // 返回文件流
       const fileStream = fs.createReadStream(filePath);
       return reply.status(HttpStatus.OK).send(fileStream);
     } catch (error) {
@@ -229,8 +299,19 @@ export class PhotosController {
 
           // Get file extension safely
           const fileExtension = path.extname(file.filename).toLowerCase();
-          const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExtension}`;
+          
+          // 使用原始文件名而不是随机生成的文件名
+          // 如果文件已存在，添加时间戳前缀避免冲突
+          let filename = file.filename;
           const filePath = path.join(uploadDir, filename);
+          
+          // 检查文件是否已存在，如果存在则添加时间戳前缀
+          if (fs.existsSync(filePath)) {
+            const nameWithoutExt = path.basename(file.filename, fileExtension);
+            filename = `${nameWithoutExt}-${Date.now()}${fileExtension}`;
+          }
+          
+          const finalFilePath = path.join(uploadDir, filename);
 
           console.log(`📁 处理文件: ${file.filename} -> ${filename}`);
           console.log(`📁 文件扩展名: ${fileExtension}`);
@@ -256,11 +337,11 @@ export class PhotosController {
             }
 
             // Write file to disk with correct extension
-            fs.writeFileSync(filePath, buffer);
+            fs.writeFileSync(finalFilePath, buffer);
             const size = buffer.length;
-            console.log(`✅ 文件已保存: ${filePath} (${size} bytes)`);
+            console.log(`✅ 文件已保存: ${finalFilePath} (${size} bytes)`);
 
-            // Save file info to database
+            // Save file info to database with thumbnail generation
             const relativePath = path
               .join('uploads', filename)
               .replace(/\\/g, '/');
@@ -277,7 +358,8 @@ export class PhotosController {
               `💾 准备写入数据库: albumId=${albumId}, photoData=`,
               photoData,
             );
-            const savedPhoto = await this.photosService.create(photoData);
+            // 传入文件路径以生成缩略图
+            const savedPhoto = await this.photosService.create(photoData, finalFilePath);
             uploadedFiles.push(savedPhoto);
             console.log(
               `✅ 数据库写入成功: id=${savedPhoto.id}, albumId=${savedPhoto.albumId}`,
@@ -285,8 +367,8 @@ export class PhotosController {
           } catch (fileError) {
             hasError = true;
             errorMessage = `Failed to process file ${file.filename}: ${fileError.message}`;
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath); // Clean up partial file
+            if (fs.existsSync(finalFilePath)) {
+              fs.unlinkSync(finalFilePath); // Clean up partial file
             }
             break;
           }
@@ -421,6 +503,73 @@ export class PhotosController {
       return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
         success: false,
         error: 'Failed to move photos',
+      });
+    }
+  }
+
+  @Post('generate-thumbnails')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate thumbnails for photos in bulk' })
+  @ApiBody({ type: GenerateThumbnailsDto })
+  @ApiResponse({ status: 200, description: 'Thumbnails generated successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - no photo IDs provided',
+  })
+  @ApiResponse({ status: 500, description: 'Thumbnail generation failed' })
+  async generateThumbnails(
+    @Body() body: GenerateThumbnailsDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    try {
+      if (!body.photoIds || body.photoIds.length === 0) {
+        return reply.status(HttpStatus.BAD_REQUEST).send({
+          success: false,
+          error: 'No photo IDs provided',
+        });
+      }
+
+      const results = await this.photosService.generateThumbnails(body.photoIds);
+      
+      return reply.status(HttpStatus.OK).send({
+        success: true,
+        data: {
+          message: 'Thumbnails generated successfully',
+          results: results,
+        },
+      });
+    } catch (error) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: 'Failed to generate thumbnails',
+      });
+    }
+  }
+
+  @Post('batch-generate-thumbnails')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate thumbnails for all existing photos' })
+  @ApiResponse({ status: 200, description: 'Thumbnails generated successfully' })
+  @ApiResponse({ status: 500, description: 'Thumbnail generation failed' })
+  async batchGenerateThumbnails(
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    try {
+      const results = await this.photosService.batchGenerateThumbnails();
+      
+      return reply.status(HttpStatus.OK).send({
+        success: true,
+        data: {
+          message: 'Batch thumbnail generation completed',
+          results: results,
+        },
+      });
+    } catch (error) {
+      return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: 'Failed to generate thumbnails in batch',
       });
     }
   }
